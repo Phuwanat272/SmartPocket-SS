@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPocket - ระบบบันทึกรายรับ-รายจ่าย</title>
+    <!-- Bootstrap 5 CSS & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="dashboard-body">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top bg-white border-bottom shadow-xs py-2.5">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('dashboard') }}">
+                <div class="brand-logo bg-teal text-white rounded-3 p-1.5 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-wallet2 fs-5"></i>
+                </div>
+                <span class="fw-bold fs-5 text-dark">SmartPocket SS</span>
+                <span class="badge bg-teal-subtle text-teal fw-semibold fs-8 rounded-pill ms-1">Term Project by Phuwanat</span>
+            </a>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Author Badge for Project Credit -->
+                <div class="d-none d-md-flex align-items-center gap-2 bg-light-subtle border rounded-pill px-3 py-1 shadow-xs">
+                    <i class="bi bi-person-badge-fill text-primary fs-7"></i>
+                    <span class="fs-8 fw-bold text-dark">Phuwanat Phuthongkhao 68011211138</span>
+                </div>
+
+                {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-dark btn-sm rounded-pill px-3 shadow-xs">
+                        <i class="bi bi-shield-lock-fill me-1.5 text-warning"></i>หน้าผู้ดูแลระบบ (Admin Panel)
+                    </a>
+                {% endif %}
+
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-pill px-3 border dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                        <div class="avatar-circle bg-primary text-white fs-7 fw-bold">
+                            {{ session.get('username')[0] | upper }}
+                        </div>
+                        <span class="fw-semibold text-dark fs-7">{{ session.get('username') }}</span>
+                        <span class="badge bg-{{ 'danger' if session.get('role') == 'admin' else 'primary' }}-subtle text-{{ 'danger' if session.get('role') == 'admin' else 'primary' }} fs-8 me-1">{{ session.get('role') | upper }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2">
+                        <li><span class="dropdown-header">บทบาท: <b>{{ session.get('role') }}</b></span></li>
+                        <li><span class="dropdown-item-text text-muted fs-8">ID ผู้ใช้: #{{ session.get('user_id') }}</span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container-fluid px-4 py-4">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show rounded-3 shadow-xs mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Metric Summary Cards Row -->
+        <div class="row g-3 mb-4">
+            <!-- 1. Total Balance Card -->
+            <div class="col-12 col-md-4">
+                <div class="card card-summary bg-dark-navy text-white h-100 p-4 border-0 rounded-4 shadow-sm position-relative overflow-hidden">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="text-white-50 fs-7 fw-medium d-block mb-1">ยอดเงินคงเหลือสุทธิ (Net Balance)</span>
+                            <h2 class="fw-extrabold m-0 display-6">฿{{ "{:,.2f}".format(balance) }}</h2>
+                        </div>
+                        <div class="icon-box bg-white-10 rounded-3 p-2 text-white">
+                            <i class="bi bi-wallet-fill fs-4"></i>
+                        </div>
+                    </div>
+                    <small class="text-white-50 fs-8">คำนวณจาก รายรับรวม - รายจ่ายรวม (เฉพาะบัญชีของคุณ)</small>
+                </div>
+            </div>
+
+            <!-- 2. Income Card -->
+            <div class="col-12 col-md-4">
+                <div class="card card-summary bg-white h-100 p-4 border rounded-4 shadow-xs">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="text-muted fs-7 fw-medium d-block mb-1">รายรับทั้งหมด (Total Income)</span>
+                            <h2 class="fw-bold text-dark m-0 text-success">฿{{ "{:,.2f}".format(total_income) }}</h2>
+                        </div>
+                        <div class="icon-box bg-success-subtle text-success rounded-3 p-2">
+                            <i class="bi bi-graph-up-arrow fs-4"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted fs-8">ยอดเงินรายรับสะสมทั้งหมดในระบบ</small>
+                </div>
+            </div>
+
+            <!-- 3. Expense Card -->
+            <div class="col-12 col-md-4">
+                <div class="card card-summary bg-white h-100 p-4 border rounded-4 shadow-xs">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="text-muted fs-7 fw-medium d-block mb-1">รายจ่ายทั้งหมด (Total Expense)</span>
+                            <h2 class="fw-bold text-dark m-0 text-danger">฿{{ "{:,.2f}".format(total_expense) }}</h2>
+                        </div>
+                        <div class="icon-box bg-danger-subtle text-danger rounded-3 p-2">
+                            <i class="bi bi-graph-down-arrow fs-4"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted fs-8">ยอดเงินรายจ่ายสะสมทั้งหมดในระบบ</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Split: Left Column (Transactions CRUD) & Right Column (Charts & Categories) -->
+        <div class="row g-4">
+            
+            <!-- Left Column: Transactions List (CRUD Requirement 3) -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-xs rounded-4 p-4 bg-white">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark m-0">
+                                <i class="bi bi-clock-history me-1.5 text-teal"></i>รายการธุรกรรมล่าสุด
+                            </h5>
+                            <small class="text-muted">
+                                ข้อมูลของบัญชี: <span class="badge bg-light text-dark border">{{ session.get('username') }}</span> 
+                                <span class="badge bg-success-subtle text-success">มีระบบตรวจสอบสิทธิ์เจ้าของข้อมูล</span>
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('export_csv') }}" class="btn btn-light border btn-sm rounded-3 px-3 font-medium">
+                                <i class="bi bi-download me-1.5 text-secondary"></i>ส่งออก CSV
+                            </a>
+                            <!-- Form 2 Modal Trigger -->
+                            <button type="button" class="btn btn-outline-teal btn-sm rounded-3 px-3 font-medium" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                <i class="bi bi-folder-plus me-1.5"></i>+ เพิ่มหมวดหมู่ (ฟอร์ม 2)
+                            </button>
+                            <!-- Form 1 Modal Trigger -->
+                            <button type="button" class="btn btn-teal btn-sm rounded-3 px-3 font-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                                <i class="bi bi-plus-lg me-1.5"></i>+ บันทึกรายการใหม่ (ฟอร์ม 1)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Transactions List (CRUD - Read, Update, Delete) -->
+                    <div class="transaction-list">
+                        {% if not transactions %}
+                            <div class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                <span>ยังไม่มีรายการบันทึก คลิกปุ่ม <b>+ บันทึกรายการใหม่</b> ด้านบนเพื่อเริ่มบันทึก</span>
+                            </div>
+                        {% else %}
+                            {% for t in transactions %}
+                                <div class="transaction-item d-flex align-items-center justify-content-between p-3 mb-2 rounded-3 bg-light-subtle hover-shadow border">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="trans-icon rounded-3 p-2.5 bg-white shadow-xs text-{{ 'success' if t.type == 'income' else 'danger' }}">
+                                            <i class="bi {{ 'bi-arrow-up-right' if t.type == 'income' else 'bi-arrow-down-left' }} fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold text-dark m-0">{{ t.title }}</h6>
+                                            <div class="d-flex align-items-center gap-2 mt-1 fs-8 text-muted">
+                                                <span><i class="bi bi-calendar3 me-1"></i>{{ t.date }}</span>
+                                                <span>•</span>
+                                                <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ t.category_name }}</span>
+                                                {% if t.note %}
+                                                    <span>•</span>
+                                                    <span class="text-truncate max-w-200" title="{{ t.note }}">{{ t.note }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fw-bold fs-6 me-2 {{ 'text-success' if t.type == 'income' else 'text-danger' }}">
+                                            {{ '+฿' if t.type == 'income' else '-฿' }}{{ "{:,.2f}".format(t.amount) }}
+                                        </span>
+
+                                        <!-- CRUD: Update Button (Triggers Edit Modal) -->
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1"
+                                                onclick="openEditModal({{ t.id }}, '{{ t.title }}', {{ t.amount }}, '{{ t.type }}', '{{ t.category_name }}', '{{ t.date }}', '{{ t.note or '' }}')"
+                                                title="แก้ไขรายการ">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+
+                                        <!-- CRUD: Delete Form with CSRF Protection -->
+                                        <form action="{{ url_for('delete_transaction', trans_id=t.id) }}" method="POST" onsubmit="return confirm('ยืนยันการลบรายการ: {{ t.title }}?');" class="m-0">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-2 px-2 py-1" title="ลบรายการ">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Charts & Categorized Summaries -->
+            <div class="col-12 col-lg-5">
+                
+                <!-- Income by Category Card -->
+                <div class="card border-0 shadow-xs rounded-4 p-4 bg-white mb-4">
+                    <h6 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-pie-chart-fill text-success me-1.5"></i>สัดส่วนรายรับตามหมวดหมู่
+                    </h6>
+                    <div class="row align-items-center">
+                        <div class="col-6">
+                            <div class="chart-container position-relative" style="height: 160px;">
+                                <canvas id="incomeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="category-breakdown-list fs-8">
+                                {% if not income_categories %}
+                                    <span class="text-muted">ยังไม่มีข้อมูลรายรับ</span>
+                                {% else %}
+                                    {% for ic in income_categories %}
+                                        <div class="d-flex justify-content-between align-items-center py-1">
+                                            <span class="d-flex align-items-center gap-1.5 text-muted text-truncate" title="{{ ic.category_name }}">
+                                                <span class="dot bg-success rounded-circle"></span>
+                                                {{ ic.category_name }}
+                                            </span>
+                                            <span class="fw-semibold text-dark">฿{{ "{:,.0f}".format(ic.total) }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense by Category Card -->
+                <div class="card border-0 shadow-xs rounded-4 p-4 bg-white mb-4">
+                    <h6 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-pie-chart-fill text-danger me-1.5"></i>สัดส่วนรายจ่ายตามหมวดหมู่
+                    </h6>
+                    <div class="row align-items-center">
+                        <div class="col-6">
+                            <div class="chart-container position-relative" style="height: 160px;">
+                                <canvas id="expenseChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="category-breakdown-list fs-8">
+                                {% if not expense_categories %}
+                                    <span class="text-muted">ยังไม่มีข้อมูลรายจ่าย</span>
+                                {% else %}
+                                    {% for ec in expense_categories %}
+                                        <div class="d-flex justify-content-between align-items-center py-1">
+                                            <span class="d-flex align-items-center gap-1.5 text-muted text-truncate" title="{{ ec.category_name }}">
+                                                <span class="dot bg-danger rounded-circle"></span>
+                                                {{ ec.category_name }}
+                                            </span>
+                                            <span class="fw-semibold text-dark">฿{{ "{:,.0f}".format(ec.total) }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL FORM 1: Add Transaction (Requirement 4 - Form 1 & CRUD Create) -->
+    <div class="modal fade" id="addTransactionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-plus-circle me-1.5 text-teal"></i>บันทึกรายการใหม่ (ฟอร์มที่ 1)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('add_transaction') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ประเภทรายการ</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check flex-fill p-3 border rounded-3 text-center bg-light cursor-pointer">
+                                    <input class="form-check-input float-none me-1" type="radio" name="type" id="typeExpense" value="expense" checked>
+                                    <label class="form-check-label fw-bold text-danger" for="typeExpense">
+                                        <i class="bi bi-arrow-down-left me-1"></i>รายจ่าย (Expense)
+                                    </label>
+                                </div>
+                                <div class="form-check flex-fill p-3 border rounded-3 text-center bg-light cursor-pointer">
+                                    <input class="form-check-input float-none me-1" type="radio" name="type" id="typeIncome" value="income">
+                                    <label class="form-check-label fw-bold text-success" for="typeIncome">
+                                        <i class="bi bi-arrow-up-right me-1"></i>รายรับ (Income)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ชื่อรายการ</label>
+                            <input type="text" name="title" class="form-control" placeholder="เช่น เงินเดือน, ค่าอาหาร, ค่าผ่อนห้อง" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">จำนวนเงิน (บาท)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">฿</span>
+                                <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">หมวดหมู่</label>
+                            <select name="category_name" class="form-select" required>
+                                <option value="" disabled selected>-- เลือกหมวดหมู่ --</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.name }}">{{ cat.name }} ({{ 'รายรับ' if cat.type == 'income' else 'รายจ่าย' }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">วันที่ทำรายการ</label>
+                            <input type="date" name="date" class="form-control" id="transactionDateInput" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">บันทึกย่อ (หมายเหตุเพิ่มเติม)</label>
+                            <textarea name="note" class="form-control" rows="2" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-teal rounded-3 px-4 fw-semibold">บันทึกรายการ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Edit Transaction (CRUD Requirement 3 - Update with Ownership Verification) -->
+    <div class="modal fade" id="editTransactionModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-pencil-square me-1.5 text-primary"></i>แก้ไขรายการธุรกรรม (CRUD Update)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editTransactionForm" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ประเภทรายการ</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check flex-fill p-3 border rounded-3 text-center bg-light">
+                                    <input class="form-check-input float-none me-1" type="radio" name="type" id="editTypeExpense" value="expense">
+                                    <label class="form-check-label fw-bold text-danger" for="editTypeExpense">
+                                        <i class="bi bi-arrow-down-left me-1"></i>รายจ่าย
+                                    </label>
+                                </div>
+                                <div class="form-check flex-fill p-3 border rounded-3 text-center bg-light">
+                                    <input class="form-check-input float-none me-1" type="radio" name="type" id="editTypeIncome" value="income">
+                                    <label class="form-check-label fw-bold text-success" for="editTypeIncome">
+                                        <i class="bi bi-arrow-up-right me-1"></i>รายรับ
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ชื่อรายการ</label>
+                            <input type="text" name="title" id="editTitle" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">จำนวนเงิน (บาท)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">฿</span>
+                                <input type="number" step="0.01" name="amount" id="editAmount" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">หมวดหมู่</label>
+                            <select name="category_name" id="editCategory" class="form-select" required>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.name }}">{{ cat.name }} ({{ 'รายรับ' if cat.type == 'income' else 'รายจ่าย' }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">วันที่ทำรายการ</label>
+                            <input type="date" name="date" id="editDate" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">บันทึกย่อ (หมายเหตุเพิ่มเติม)</label>
+                            <textarea name="note" id="editNote" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">บันทึกการแก้ไข</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FORM 2: Add Custom Category (Requirement 4 - Form 2) -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-folder-plus me-1.5 text-teal"></i>เพิ่มหมวดหมู่ส่วนตัว (ฟอร์มที่ 2)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('add_category') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ชื่อหมวดหมู่ใหม่</label>
+                            <input type="text" name="name" class="form-control" placeholder="เช่น ค่าผ่อนบ้าน, ค่าเกม, ท่องเที่ยวต่างประเทศ" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">ประเภท</label>
+                            <select name="type" class="form-select" required>
+                                <option value="expense">รายจ่าย (Expense)</option>
+                                <option value="income">รายรับ (Income)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">สีประจำหมวดหมู่</label>
+                            <input type="color" name="color" class="form-control form-control-color w-100" value="#4F46E5">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-outline-teal rounded-3 px-4 fw-semibold">สร้างหมวดหมู่</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Data Transfer & Helper Functions -->
+    <script>
+        // Set today's date as default for date picker
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('transactionDateInput');
+            if (dateInput && !dateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+        });
+
+        // Open and Populate Edit Modal (CRUD Update)
+        function openEditModal(id, title, amount, type, category, date, note) {
+            const form = document.getElementById('editTransactionForm');
+            form.action = `/api/transactions/${id}/edit`;
+
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editAmount').value = amount;
+            document.getElementById('editCategory').value = category;
+            document.getElementById('editDate').value = date;
+            document.getElementById('editNote').value = note;
+
+            if (type === 'income') {
+                document.getElementById('editTypeIncome').checked = true;
+            } else {
+                document.getElementById('editTypeExpense').checked = true;
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
+            modal.show();
+        }
+
+        const incomeChartData = {
+            labels: {{ income_categories | map(attribute='category_name') | list | tojson }},
+            data: {{ income_categories | map(attribute='total') | list | tojson }}
+        };
+        const expenseChartData = {
+            labels: {{ expense_categories | map(attribute='category_name') | list | tojson }},
+            data: {{ expense_categories | map(attribute='total') | list | tojson }}
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

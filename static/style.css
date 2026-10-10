@@ -1,0 +1,128 @@
+/* assets/css/style.css - CerdasDuit Styling */
+
+:root {
+    --primary-font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --dark-navy: #192a45;
+    --teal: #0d9488;
+    --teal-hover: #0f766e;
+    --teal-light: #e6fffa;
+    --bg-light: #f8fafc;
+}
+
+body {
+    font-family: var(--primary-font);
+    background-color: var(--bg-light);
+    color: #1e293b;
+    -webkit-font-smoothing: antialiased;
+}
+
+.fs-7 { font-size: 0.875rem; }
+.fs-8 { font-size: 0.775rem; }
+.fw-extrabold { font-weight: 800; }
+.max-w-200 { max-width: 200px; display: inline-block; }
+
+/* Custom Colors */
+.bg-dark-navy { background-color: var(--dark-navy) !important; }
+.bg-teal { background-color: var(--teal) !important; }
+.bg-teal-subtle { background-color: #ccfbf1 !important; }
+.text-teal { color: var(--teal) !important; }
+
+.btn-teal {
+    background-color: var(--teal);
+    color: #ffffff;
+    border: none;
+}
+.btn-teal:hover {
+    background-color: var(--teal-hover);
+    color: #ffffff;
+}
+
+.btn-outline-teal {
+    color: var(--teal);
+    border-color: var(--teal);
+    background-color: transparent;
+}
+.btn-outline-teal:hover {
+    background-color: var(--teal);
+    color: #ffffff;
+}
+
+/* Auth Pages */
+.auth-body {
+    background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 440px;
+}
+
+.auth-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 40px 32px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.app-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #e0f2fe;
+}
+
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Summary Cards */
+.card-summary {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-summary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+}
+
+.bg-white-10 {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Transaction Item */
+.transaction-item {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+.transaction-item:hover {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.hover-danger:hover {
+    color: #ef4444 !important;
+}
+
+/* Category Chart Dot */
+.dot {
+    width: 8px;
+    height: 8px;
+    display: inline-block;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
