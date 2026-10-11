@@ -766,8 +766,12 @@
 
         function deleteTransaction(id) {
             if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+                // อัปเดตรายการที่แสดงผลอยู่
                 transactions = transactions.filter(t => t.id !== id);
-                localStorage.setItem('smartpocket_transactions', JSON.stringify(transactions));
+                // อัปเดตในคลังข้อมูลหลัก localStorage โดยไม่กระทบรายการของผู้ใช้อื่น
+                const allTxs = JSON.parse(localStorage.getItem('smartpocket_transactions') || '[]');
+                const updatedAll = allTxs.filter(t => t.id !== id);
+                localStorage.setItem('smartpocket_transactions', JSON.stringify(updatedAll));
                 refreshDashboard();
                 showAlert('success', 'ลบรายการเรียบร้อยแล้ว');
             }
