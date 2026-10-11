@@ -67,23 +67,30 @@
                     <span class="fw-semibold" style="color:#bfdbfe;font-size:0.75rem">Phuwanat Phuthongkhao (68011211138)</span>
                 </div>
 
-                <button class="btn btn-sm btn-outline-light rounded-pill px-3 fs-8" onclick="resetDemoData()">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>รีเซ็ตข้อมูลตัวอย่าง
+                <a href="login.html" class="btn btn-sm btn-outline-light rounded-pill px-3 fs-8">
+                    <i class="bi bi-box-arrow-in-right me-1"></i>หน้า Login
+                </a>
+
+                <button class="btn btn-sm btn-outline-light rounded-pill px-3 fs-8 d-none d-sm-inline-block" onclick="resetDemoData()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>รีเซ็ตข้อมูล
                 </button>
 
                 <div class="dropdown">
                     <button class="btn btn-light btn-sm rounded-pill px-3 border dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
-                        <div class="avatar-circle bg-primary text-white fs-8 fw-bold" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%">
+                        <div class="avatar-circle bg-primary text-white fs-8 fw-bold" id="userAvatarCircle" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%">
                             P
                         </div>
-                        <span class="fw-semibold text-dark fs-7">Phuwanat</span>
-                        <span class="badge bg-primary-subtle text-primary fs-8">DEMO</span>
+                        <span class="fw-semibold text-dark fs-7" id="navUsername">Phuwanat</span>
+                        <span class="badge bg-primary-subtle text-primary fs-8" id="navRoleBadge">ADMIN</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2">
-                        <li><span class="dropdown-header">ผู้ใช้งาน: <b>Phuwanat (Admin)</b></span></li>
+                        <li><span class="dropdown-header">ผู้ใช้งาน: <b id="menuUsernameHeader">Phuwanat (Admin)</b></span></li>
                         <li><span class="dropdown-item-text text-muted fs-8">รหัสนิสิต: 68011211138</span></li>
                         <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="login.html"><i class="bi bi-person-switch me-2"></i>สลับบัญชีผู้ใช้ (Login)</a></li>
                         <li><a class="dropdown-item" href="https://github.com/Phuwanat272/SmartPocket-SS" target="_blank"><i class="bi bi-github me-2"></i>GitHub Repository</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</a></li>
                     </ul>
                 </div>
             </div>
@@ -438,8 +445,27 @@
                 localStorage.setItem('smartpocket_transactions', JSON.stringify(transactions));
             }
 
+            // Check logged in user
+            const currentUserStr = localStorage.getItem('smartpocket_currentUser');
+            if (currentUserStr) {
+                try {
+                    const cu = JSON.parse(currentUserStr);
+                    if (cu.username) {
+                        document.getElementById('navUsername').textContent = cu.username;
+                        document.getElementById('userAvatarCircle').textContent = cu.username[0].toUpperCase();
+                        document.getElementById('navRoleBadge').textContent = (cu.role || 'USER').toUpperCase();
+                        document.getElementById('menuUsernameHeader').textContent = `${cu.username} (${cu.role || 'user'})`;
+                    }
+                } catch(e) {}
+            }
+
             updateCategoryDropdown();
             refreshDashboard();
+        }
+
+        function logout() {
+            localStorage.removeItem('smartpocket_currentUser');
+            window.location.href = 'login.html?logout=1';
         }
 
         // Reset to initial demo data
