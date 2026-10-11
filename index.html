@@ -93,7 +93,7 @@
                         <li><span class="dropdown-header">ผู้ใช้งาน: <b id="menuUsernameHeader">Phuwanat (Admin)</b></span></li>
                         <li><span class="dropdown-item-text text-muted fs-8">รหัสนิสิต: 68011211138</span></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="login.html"><i class="bi bi-person-switch me-2"></i>สลับบัญชีผู้ใช้ (Login)</a></li>
+                        <li id="adminPanelLink" class="d-none"><a class="dropdown-item text-danger fw-semibold" href="admin.html"><i class="bi bi-shield-lock-fill me-2"></i>หน้าผู้ดูแลระบบ (Admin Panel)</a></li>
                         <li><a class="dropdown-item" href="https://github.com/Phuwanat272/SmartPocket-SS" target="_blank"><i class="bi bi-github me-2"></i>GitHub Repository</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</a></li>
@@ -460,7 +460,21 @@
                         document.getElementById('navUsername').textContent = cu.username;
                         document.getElementById('userAvatarCircle').textContent = cu.username[0].toUpperCase();
                         document.getElementById('navRoleBadge').textContent = (cu.role || 'USER').toUpperCase();
+                        document.getElementById('navRoleBadge').className = `badge fs-8 bg-${cu.role === 'admin' ? 'danger' : 'primary'}-subtle text-${cu.role === 'admin' ? 'danger' : 'primary'}`;
                         document.getElementById('menuUsernameHeader').textContent = `${cu.username} (${cu.role || 'user'})`;
+
+                        // แสดงปุ่ม Admin Panel เฉพาะ Admin เท่านั้น
+                        if (cu.role === 'admin') {
+                            document.getElementById('adminPanelLink').classList.remove('d-none');
+                        }
+
+                        // กรองรายการเฉพาะของ user คนนี้ (Data Ownership)
+                        // Admin เห็นทุกรายการ, User เห็นเฉพาะของตัวเอง
+                        if (cu.role !== 'admin') {
+                            transactions = transactions.filter(t =>
+                                !t.owner || t.owner === cu.username
+                            );
+                        }
                     }
                 } catch(e) {}
             }
@@ -689,6 +703,10 @@
                 return;
             }
 
+            // ดึงชื่อ user ปัจจุบัน เพื่อบันทึกเป็น "เจ้าของ" ของรายการ (Data Ownership)
+            const cu = JSON.parse(localStorage.getItem('smartpocket_currentUser') || '{}');
+            const owner = cu.username || 'demo_user';
+
             const newTx = {
                 id: Date.now(),
                 title,
@@ -696,11 +714,17 @@
                 type,
                 category_name,
                 date,
-                note
+                note,
+                owner  // บันทึกเจ้าของรายการ
             };
 
+            // บันทึกลง localStorage (ฐานข้อมูลในเครื่อง)
+            const allTxs = JSON.parse(localStorage.getItem('smartpocket_transactions') || '[]');
+            allTxs.unshift(newTx);
+            localStorage.setItem('smartpocket_transactions', JSON.stringify(allTxs));
+
+            // อัปเดต array ในหน่วยความจำสำหรับแสดงผล
             transactions.unshift(newTx);
-            localStorage.setItem('smartpocket_transactions', JSON.stringify(transactions));
 
             bootstrap.Modal.getInstance(document.getElementById('addTransactionModal')).hide();
             document.getElementById('addTransactionForm').reset();

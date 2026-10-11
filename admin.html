@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หน้าผู้ดูแลระบบ - SmartPocket SS Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script>
+        // Auth Guard: Admin เท่านั้น
+        const cu = JSON.parse(localStorage.getItem('smartpocket_currentUser') || 'null');
+        if (!cu) {
+            window.location.replace('login.html');
+        } else if (cu.role !== 'admin') {
+            alert('❌ ไม่มีสิทธิ์เข้าถึง! หน้านี้สำหรับผู้ดูแลระบบ (Admin) เท่านั้น');
+            window.location.replace('index.html');
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif; background-color: #f0f4f8; }
+        .fs-7  { font-size: 0.875rem !important; }
+        .fs-8  { font-size: 0.775rem !important; }
+        .fw-extrabold { font-weight: 800 !important; }
+        .avatar-circle {
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        .shadow-xs { box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar (Dark Admin Style) -->
+    <nav class="navbar navbar-expand-lg sticky-top bg-dark text-white border-bottom shadow py-2">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-white" href="admin.html">
+                <div class="d-flex align-items-center justify-content-center bg-danger rounded-3 p-1" style="width:36px;height:36px;">
+                    <i class="bi bi-shield-lock-fill fs-5 text-white"></i>
+                </div>
+                <span class="fw-bold fs-5">SmartPocket SS — Admin Panel</span>
+                <span class="badge bg-danger fs-8 rounded-pill">ADMIN</span>
+            </a>
+
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-none d-md-flex align-items-center gap-2 px-3 py-1 border border-secondary rounded-pill">
+                    <i class="bi bi-person-badge-fill text-warning"></i>
+                    <span class="fs-8 fw-semibold text-white-50">Phuwanat Phuthongkhao (68011211138)</span>
+                </div>
+                <a href="index.html" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                    <i class="bi bi-speedometer2 me-1"></i>กลับ Dashboard
+                </a>
+                <button onclick="logout()" class="btn btn-danger btn-sm rounded-pill px-3">
+                    <i class="bi bi-box-arrow-right me-1"></i>ออกจากระบบ
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4 py-4">
+
+        <!-- Alert Placeholder -->
+        <div id="alertPlaceholder"></div>
+
+        <!-- System Stats Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="card p-3 border-0 rounded-4 shadow-xs bg-white">
+                    <span class="text-muted fs-7"><i class="bi bi-people-fill text-primary me-1"></i>ผู้ใช้ทั้งหมดในระบบ</span>
+                    <h3 class="fw-extrabold text-primary m-0 mt-1" id="statTotalUsers">- <small class="fs-6 fw-normal">คน</small></h3>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="card p-3 border-0 rounded-4 shadow-xs bg-white">
+                    <span class="text-muted fs-7"><i class="bi bi-list-check text-info me-1"></i>รายการทั้งหมดในระบบ</span>
+                    <h3 class="fw-extrabold text-info m-0 mt-1" id="statTotalTx">- <small class="fs-6 fw-normal">รายการ</small></h3>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="card p-3 border-0 rounded-4 shadow-xs bg-white">
+                    <span class="text-muted fs-7"><i class="bi bi-graph-up-arrow text-success me-1"></i>รายรับรวมทั้งระบบ</span>
+                    <h3 class="fw-extrabold text-success m-0 mt-1" id="statTotalIncome">฿0.00</h3>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="card p-3 border-0 rounded-4 shadow-xs bg-white">
+                    <span class="text-muted fs-7"><i class="bi bi-graph-down-arrow text-danger me-1"></i>รายจ่ายรวมทั้งระบบ</span>
+                    <h3 class="fw-extrabold text-danger m-0 mt-1" id="statTotalExpense">฿0.00</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Table -->
+        <div class="card border-0 shadow-xs rounded-4 p-4 bg-white mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-people text-primary me-2"></i>จัดการผู้ใช้งานทั้งหมด (User Management)</h5>
+                    <small class="text-muted">แก้ไขข้อมูลผู้ใช้, รีเซ็ตรหัสผ่าน, สลับสิทธิ์ Admin/User, ลบบัญชี</small>
+                </div>
+                <button class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="bi bi-person-plus me-1"></i>+ เพิ่มผู้ใช้
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="usersTable">
+                    <thead class="table-light fs-7">
+                        <tr>
+                            <th>#</th>
+                            <th>ชื่อผู้ใช้ (Username)</th>
+                            <th>อีเมล (Email)</th>
+                            <th>บทบาท (Role)</th>
+                            <th>จำนวนรายการ</th>
+                            <th class="text-end">การจัดการ (Actions)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="fs-7">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- All Transactions Table (Admin can view all users' data) -->
+        <div class="card border-0 shadow-xs rounded-4 p-4 bg-white mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold text-dark m-0"><i class="bi bi-table text-info me-2"></i>รายการทั้งหมดในระบบ (All Transactions)</h5>
+                    <small class="text-muted">ในฐานะ Admin สามารถดูรายการของผู้ใช้ทุกคน แต่ <strong>ผู้ใช้ทั่วไปเห็นเฉพาะรายการของตัวเองเท่านั้น</strong></small>
+                </div>
+                <div class="d-flex gap-2">
+                    <select id="filterUserSelect" class="form-select form-select-sm rounded-3" onchange="renderAllTransactions()" style="max-width:180px">
+                        <option value="all">ทุกผู้ใช้</option>
+                    </select>
+                    <button onclick="exportAllToCSV()" class="btn btn-outline-secondary btn-sm rounded-3 px-3">
+                        <i class="bi bi-download me-1"></i>Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light fs-7">
+                        <tr>
+                            <th>วันที่</th>
+                            <th>ชื่อรายการ</th>
+                            <th>หมวดหมู่</th>
+                            <th>ประเภท</th>
+                            <th>จำนวนเงิน</th>
+                            <th>เจ้าของบัญชี</th>
+                            <th class="text-end">การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allTransactionsBody" class="fs-7">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal: Add User -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary me-2"></i>เพิ่มผู้ใช้ใหม่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addUserForm" onsubmit="handleAddUser(event)">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">ชื่อผู้ใช้ <span class="text-danger">*</span></label>
+                            <input type="text" id="newUsername" class="form-control rounded-3" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">อีเมล <span class="text-danger">*</span></label>
+                            <input type="email" id="newEmail" class="form-control rounded-3" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">รหัสผ่าน <span class="text-danger">*</span></label>
+                            <input type="password" id="newPassword" class="form-control rounded-3" minlength="6" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold fs-7">บทบาท (Role)</label>
+                            <select id="newRole" class="form-select rounded-3">
+                                <option value="user" selected>ผู้ใช้ทั่วไป (User)</option>
+                                <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">เพิ่มผู้ใช้</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit User -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>แก้ไขข้อมูลผู้ใช้</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editUserForm" onsubmit="handleEditUser(event)">
+                    <input type="hidden" id="editUserId">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">ชื่อผู้ใช้ <span class="text-danger">*</span></label>
+                            <input type="text" id="editUsername" class="form-control rounded-3" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">อีเมล <span class="text-danger">*</span></label>
+                            <input type="email" id="editEmail" class="form-control rounded-3" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold fs-7">รีเซ็ตรหัสผ่านใหม่ (ถ้าว่างจะไม่เปลี่ยน)</label>
+                            <input type="password" id="editPassword" class="form-control rounded-3" minlength="6" placeholder="ว่างไว้ถ้าไม่ต้องการเปลี่ยน">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-3" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">บันทึกการแก้ไข</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Built-in accounts (read-only in UI, shown in table)
+        const BUILTIN_USERS = [
+            { id: 'b1', username: 'Admin ICE', email: 'ice@admin.local', role: 'admin', isBuiltin: true },
+            { id: 'b2', username: 'demo_user', email: 'demo@system.local', role: 'user', isBuiltin: true },
+            { id: 'b3', username: 'icesyy', email: 'ice12345@gmail.com', role: 'user', isBuiltin: true },
+        ];
+
+        function getAllUsers() {
+            const stored = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
+            return [...BUILTIN_USERS, ...stored.map((u, i) => ({ ...u, id: `u${i}`, isBuiltin: false }))];
+        }
+
+        function getAllTransactions() {
+            return JSON.parse(localStorage.getItem('smartpocket_transactions') || '[]');
+        }
+
+        function showAlert(type, message) {
+            document.getElementById('alertPlaceholder').innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show rounded-3 shadow-xs mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>`;
+            setTimeout(() => {
+                const el = document.getElementById('alertPlaceholder').querySelector('.alert');
+                if (el) el.remove();
+            }, 3500);
+        }
+
+        function logout() {
+            localStorage.removeItem('smartpocket_currentUser');
+            window.location.href = 'login.html?logout=1';
+        }
+
+        function refreshStats() {
+            const users = getAllUsers();
+            const txs = getAllTransactions();
+            let totalInc = 0, totalExp = 0;
+            txs.forEach(t => {
+                if (t.type === 'income') totalInc += parseFloat(t.amount || 0);
+                else totalExp += parseFloat(t.amount || 0);
+            });
+
+            document.getElementById('statTotalUsers').innerHTML = `${users.length} <small class="fs-6 fw-normal">คน</small>`;
+            document.getElementById('statTotalTx').innerHTML = `${txs.length} <small class="fs-6 fw-normal">รายการ</small>`;
+            document.getElementById('statTotalIncome').textContent = `฿${totalInc.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+            document.getElementById('statTotalExpense').textContent = `฿${totalExp.toLocaleString('en-US', {minimumFractionDigits:2})}`;
+        }
+
+        function renderUsersTable() {
+            const users = getAllUsers();
+            const txs = getAllTransactions();
+            const tbody = document.getElementById('usersTableBody');
+
+            tbody.innerHTML = users.map((u, idx) => {
+                const txCount = txs.filter(t => t.owner === u.username).length;
+                const isAdmin = u.role === 'admin';
+                return `
+                <tr>
+                    <td class="fw-bold text-muted">#${idx + 1}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-circle bg-${isAdmin ? 'danger' : 'primary'} text-white">${u.username[0].toUpperCase()}</div>
+                            <div>
+                                <span class="fw-semibold text-dark">${escapeHtml(u.username)}</span>
+                                ${u.isBuiltin ? '<span class="badge bg-secondary-subtle text-secondary ms-1 fs-8">Built-in</span>' : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-muted">${escapeHtml(u.email)}</td>
+                    <td>
+                        <span class="badge bg-${isAdmin ? 'danger' : 'primary'}-subtle text-${isAdmin ? 'danger' : 'primary'} rounded-pill px-2 py-1 fw-semibold">
+                            ${u.role.toUpperCase()}
+                        </span>
+                    </td>
+                    <td><span class="fw-bold">${txCount}</span> รายการ</td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            ${!u.isBuiltin ? `
+                            <button class="btn btn-outline-primary btn-sm px-2 py-1 fs-8 rounded-3" onclick="openEditModal('${u.id}')">
+                                <i class="bi bi-pencil-square me-1"></i>แก้ไข
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm px-2 py-1 fs-8 rounded-3" onclick="toggleRole('${u.id}')">
+                                <i class="bi bi-arrow-repeat me-1"></i>สลับสิทธิ์
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm px-2 py-1 fs-8 rounded-3" onclick="deleteUser('${u.id}', '${escapeHtml(u.username)}')">
+                                <i class="bi bi-trash me-1"></i>ลบ
+                            </button>
+                            ` : `<span class="text-muted fs-8">(บัญชีระบบ)</span>`}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function renderAllTransactions() {
+            const txs = getAllTransactions();
+            const filterUser = document.getElementById('filterUserSelect').value;
+            const tbody = document.getElementById('allTransactionsBody');
+
+            // Populate filter dropdown
+            const users = getAllUsers();
+            const filterSelect = document.getElementById('filterUserSelect');
+            const currentVal = filterSelect.value;
+            filterSelect.innerHTML = '<option value="all">ทุกผู้ใช้</option>' +
+                users.map(u => `<option value="${escapeHtml(u.username)}" ${currentVal === u.username ? 'selected' : ''}>${escapeHtml(u.username)}</option>`).join('');
+            filterSelect.value = currentVal;
+
+            const filtered = filterUser === 'all' ? txs : txs.filter(t => t.owner === filterUser);
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">ไม่มีรายการ</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(t => {
+                const isInc = t.type === 'income';
+                return `
+                <tr>
+                    <td class="text-muted fs-8">${t.date}</td>
+                    <td class="fw-semibold text-dark">${escapeHtml(t.title)}</td>
+                    <td><span class="badge bg-secondary-subtle text-secondary rounded-pill">${escapeHtml(t.category_name)}</span></td>
+                    <td><span class="badge bg-${isInc ? 'success' : 'danger'}-subtle text-${isInc ? 'success' : 'danger'} rounded-pill">${isInc ? 'รายรับ' : 'รายจ่าย'}</span></td>
+                    <td class="fw-bold ${isInc ? 'text-success' : 'text-danger'}">${isInc ? '+' : '-'}฿${parseFloat(t.amount).toLocaleString('en-US', {minimumFractionDigits:2})}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-1">
+                            <div class="avatar-circle bg-primary text-white" style="width:22px;height:22px;font-size:0.65rem">${(t.owner || 'demo_user')[0].toUpperCase()}</div>
+                            <span class="fs-8 text-muted">${escapeHtml(t.owner || 'demo_user')}</span>
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-link text-danger p-0 border-0 fs-7" title="ลบรายการ (Admin)" onclick="adminDeleteTx(${t.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function openEditModal(userId) {
+            const users = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
+            const u = users.find((_, i) => `u${i}` === userId);
+            if (!u) return;
+            document.getElementById('editUserId').value = userId;
+            document.getElementById('editUsername').value = u.username;
+            document.getElementById('editEmail').value = u.email;
+            document.getElementById('editPassword').value = '';
+            new bootstrap.Modal(document.getElementById('editUserModal')).show();
+        }
+
+        function handleEditUser(e) {
+            e.preventDefault();
+            const userId = document.getElementById('editUserId').value;
+            const users = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
+            const idx = parseInt(userId.replace('u', ''));
+            if (isNaN(idx) || !users[idx]) return;
+
+            users[idx].username = document.getElementById('editUsername').value.trim();
+            users[idx].email = document.getElementById('editEmail').value.trim();
+            const newPass = document.getElementById('editPassword').value;
+            if (newPass) users[idx].password = newPass;
+
+            localStorage.setItem('smartpocket_users', JSON.stringify(users));
+            bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+            refreshAll();
+            showAlert('success', 'แก้ไขข้อมูลผู้ใช้สำเร็จแล้ว!');
+        }
+
+        function handleAddUser(e) {
+            e.preventDefault();
+            const users = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
+            const username = document.getElementById('newUsername').value.trim();
+            const email = document.getElementById('newEmail').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+
+            users.push({ username, email, password, role, createdAt: new Date().toISOString() });
+            localStorage.setItem('smartpocket_users', JSON.stringify(users));
+            bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+            document.getElementById('addUserForm').reset();
+            refreshAll();
+            showAlert('success', `เพิ่มผู้ใช้ "${username}" สำเร็จแล้ว!`);
+        }
+
+        function toggleRole(userId) {
+            const users = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
+            const idx = parseInt(userId.replace('u', ''));
+            if (isNaN(idx) || !users[idx]) return;
+            users[idx].role = users[idx].role === 'admin' ? 'user' : 'admin';
+            localStorage.setItem('smartpocket_users', JSON.stringify(users));
+            refreshAll();
+            showAlert('success', `เปลี่ยนสิทธิ์ผู้ใช้ "${users[idx].username}" เป็น ${users[idx].role.toUpperCase()} เรียบร้อย!`);
+        }
+
+        function deleteUser(userId, username) {
+            if (!confirm(`ยืนยันการลบบัญชี "${username}" ออกจากระบบ?`)) return;
+            const users = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
+            const idx = parseInt(userId.replace('u', ''));
+            if (isNaN(idx)) return;
+            users.splice(idx, 1);
+            localStorage.setItem('smartpocket_users', JSON.stringify(users));
+            refreshAll();
+            showAlert('success', `ลบบัญชี "${username}" เรียบร้อยแล้ว`);
+        }
+
+        function adminDeleteTx(id) {
+            if (!confirm('ลบรายการนี้ในฐานะ Admin?')) return;
+            let txs = JSON.parse(localStorage.getItem('smartpocket_transactions') || '[]');
+            txs = txs.filter(t => t.id !== id);
+            localStorage.setItem('smartpocket_transactions', JSON.stringify(txs));
+            refreshAll();
+            showAlert('success', 'ลบรายการเรียบร้อยแล้ว');
+        }
+
+        function exportAllToCSV() {
+            const txs = getAllTransactions();
+            if (!txs.length) { alert('ไม่มีรายการ'); return; }
+            let csv = '\uFEFFวันที่,ชื่อรายการ,หมวดหมู่,ประเภท,จำนวนเงิน,เจ้าของบัญชี\n';
+            txs.forEach(t => {
+                csv += `"${t.date}","${t.title}","${t.category_name}","${t.type === 'income' ? 'รายรับ' : 'รายจ่าย'}","${t.amount}","${t.owner || 'demo_user'}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `SmartPocket_All_Transactions_Admin.csv`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function refreshAll() {
+            refreshStats();
+            renderUsersTable();
+            renderAllTransactions();
+        }
+
+        document.addEventListener('DOMContentLoaded', refreshAll);
+    </script>
+</body>
+</html>
