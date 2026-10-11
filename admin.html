@@ -53,9 +53,6 @@
                 <a href="https://github.com/Phuwanat272/SmartPocket-SS" target="_blank" class="btn btn-outline-info btn-sm rounded-pill px-3">
                     <i class="bi bi-github me-1"></i>ดูซอร์สโค้ด GitHub (Admin)
                 </a>
-                <button class="btn btn-warning btn-sm rounded-pill px-3 fw-semibold text-dark" data-bs-toggle="modal" data-bs-target="#adminSecurityModal">
-                    <i class="bi bi-shield-check me-1"></i>เกณฑ์ความปลอดภัย (10 คะแนน)
-                </button>
                 <a href="index.html" class="btn btn-outline-light btn-sm rounded-pill px-3">
                     <i class="bi bi-speedometer2 me-1"></i>Dashboard
                 </a>
@@ -237,80 +234,6 @@
                         <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">บันทึกการแก้ไข</button>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: Web Security Defense Audit (10 คะแนน) -->
-    <div class="modal fade" id="adminSecurityModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content rounded-4 border-0 shadow">
-                <div class="modal-header bg-dark text-white rounded-top-4 border-0 py-3">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="bg-warning text-dark p-2 rounded-3 d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
-                            <i class="bi bi-shield-check-fill fs-5"></i>
-                        </div>
-                        <div>
-                            <h5 class="modal-title fw-bold m-0 text-white">ระบบป้องกันการโจมตี (Web Security Defense)</h5>
-                            <small class="text-white-50 fs-8">มาตรฐานความปลอดภัย 10 คะแนนเต็ม (ตรวจในห้องเรียน) — อิงสไลด์ อ.จตุภูมิ จวนชัยภูมิ</small>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4 bg-light-subtle">
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <div class="card h-100 border-0 shadow-xs rounded-3 p-3 bg-white">
-                                <span class="badge bg-danger rounded-pill px-2.5 py-1 fs-8 w-fit mb-2">1. XSS Protection (สไลด์หน้า 5-13)</span>
-                                <h6 class="fw-bold text-dark m-0 mb-1">Cross-Site Scripting (CWE-79)</h6>
-                                <p class="text-muted fs-8 mb-2">แปลงอักขระพิเศษเป็น HTML Entities <code>&lt; &gt; " ' / ( )</code> ป้องกัน Hacker ฝังโค้ด JavaScript ทั้ง Stored XSS และ Reflected XSS</p>
-                                <div class="p-2 bg-light rounded-2 fs-8 font-monospace text-dark border">
-                                    ✓ ฟังก์ชัน <code>escapeHtml()</code> &amp; <code>secureStr()</code><br>
-                                    ✓ ป้องกัน Script Injection ทุกจุด
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="card h-100 border-0 shadow-xs rounded-3 p-3 bg-white">
-                                <span class="badge bg-primary rounded-pill px-2.5 py-1 fs-8 w-fit mb-2">2. SQL Injection (สไลด์หน้า 14-18)</span>
-                                <h6 class="fw-bold text-dark m-0 mb-1">SQL Injection (CWE-89)</h6>
-                                <p class="text-muted fs-8 mb-2">ป้องกันการ Bypass Login ด้วย <code>' OR 'x'='x</code> หรือ <code>admin' or ''='' ; #</code></p>
-                                <div class="p-2 bg-light rounded-2 fs-8 font-monospace text-dark border">
-                                    ✓ ใช้ PDO Prepared Statements (:param)<br>
-                                    ✓ รหัสผ่านเข้ารหัสด้วย BCRYPT (password_hash)
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="card h-100 border-0 shadow-xs rounded-3 p-3 bg-white">
-                                <span class="badge bg-success rounded-pill px-2.5 py-1 fs-8 w-fit mb-2">3. MITM Protection (สไลด์หน้า 19-21)</span>
-                                <h6 class="fw-bold text-dark m-0 mb-1">Man-In-The-Middle Attack</h6>
-                                <p class="text-muted fs-8 mb-2">ป้องกันการดักจับข้อมูลชื่อผู้ใช้และรหัสผ่านผ่านเครือข่าย</p>
-                                <div class="p-2 bg-light rounded-2 fs-8 font-monospace text-dark border">
-                                    ✓ ทำงานบนโปรโตคอล HTTPS / SSL (TLS 1.3)<br>
-                                    ✓ ทำงานร่วมกับ Captcha ป้องกันการสวมรอย
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="card h-100 border-0 shadow-xs rounded-3 p-3 bg-white">
-                                <span class="badge bg-warning text-dark rounded-pill px-2.5 py-1 fs-8 w-fit mb-2">4. SPAM &amp; Bot (สไลด์หน้า 22-25)</span>
-                                <h6 class="fw-bold text-dark m-0 mb-1">SPAM &amp; Automated Bots</h6>
-                                <p class="text-muted fs-8 mb-2">ป้องกันบอทส่งข้อความขยะหรือยิงบันทึกรายการอัตโนมัติ</p>
-                                <div class="p-2 bg-light rounded-2 fs-8 font-monospace text-dark border">
-                                    ✓ Dynamic Captcha ยืนยันตัวตนมนุษย์<br>
-                                    ✓ Rate Limiting (จำกัดระยะห่างเวลาโพสต์)
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 bg-white py-2.5">
-                    <span class="text-success fs-8 fw-semibold me-auto">
-                        <i class="bi bi-patch-check-fill me-1"></i>เกณฑ์ความปลอดภัยครบถ้วน 10 คะแนนเต็ม
-                    </span>
-                    <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
-                </div>
             </div>
         </div>
     </div>
