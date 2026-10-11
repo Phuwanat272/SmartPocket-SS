@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartPocket SS - ระบบบันทึกรายรับ-รายจ่าย (Live Demo)</title>
+    <!-- Bootstrap 5 CSS & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .balance-card {
+            background: linear-gradient(135deg, #0a2540 0%, #1e4976 100%) !important;
+        }
+        .owner-badge {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 4px 12px;
+        }
+        .live-tag {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 600;
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .trans-badge-inc { background-color: #ecfdf5; color: #059669; }
+        .trans-badge-exp { background-color: #fef2f2; color: #dc2626; }
+    </style>
+</head>
+<body class="dashboard-body">
+
+    <!-- Top Announcement Bar -->
+    <div class="bg-primary text-white py-1 px-3 text-center fs-8 d-flex justify-content-between align-items-center">
+        <span class="mx-auto">
+            🚀 <strong>SmartPocket SS</strong> — ระบบบันทึกรายรับ-รายจ่าย (GitHub Pages Live Edition) | จัดทำโดย <strong>ภูวนัตถ์ ภูทองขาว (68011211138)</strong>
+        </span>
+        <a href="https://github.com/Phuwanat272/SmartPocket-SS" target="_blank" class="text-white text-decoration-none d-none d-md-inline fs-8 opacity-75 hover-opacity-100">
+            <i class="bi bi-github me-1"></i>ดูซอร์สโค้ด PHP/Python
+        </a>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <nav class="navbar navbar-expand-lg sticky-top smartpocket-navbar py-2.5">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <div class="brand-logo bg-primary text-white rounded-3 p-1.5 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-wallet2 fs-5"></i>
+                </div>
+                <span class="fw-bold fs-5 text-white">SmartPocket SS</span>
+                <span class="live-tag ms-1"><i class="bi bi-broadcast me-1"></i>Live Web</span>
+            </a>
+
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-none d-md-flex align-items-center owner-badge me-1">
+                    <i class="bi bi-person-badge-fill me-1" style="color:#7dd3fc"></i>
+                    <span class="fw-semibold" style="color:#bfdbfe;font-size:0.75rem">Phuwanat Phuthongkhao (68011211138)</span>
+                </div>
+
+                <button class="btn btn-sm btn-outline-light rounded-pill px-3 fs-8" onclick="resetDemoData()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>รีเซ็ตข้อมูลตัวอย่าง
+                </button>
+
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-pill px-3 border dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                        <div class="avatar-circle bg-primary text-white fs-8 fw-bold" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%">
+                            P
+                        </div>
+                        <span class="fw-semibold text-dark fs-7">Phuwanat</span>
+                        <span class="badge bg-primary-subtle text-primary fs-8">DEMO</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2">
+                        <li><span class="dropdown-header">ผู้ใช้งาน: <b>Phuwanat (Admin)</b></span></li>
+                        <li><span class="dropdown-item-text text-muted fs-8">รหัสนิสิต: 68011211138</span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="https://github.com/Phuwanat272/SmartPocket-SS" target="_blank"><i class="bi bi-github me-2"></i>GitHub Repository</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container-fluid px-4 py-4">
+
+        <!-- Notification Toast/Alert Area -->
+        <div id="alertPlaceholder"></div>
+
+        <!-- Metric Summary Cards Row -->
+        <div class="row g-3 mb-4">
+            <!-- 1. Total Balance Card -->
+            <div class="col-12 col-md-4">
+                <div class="card card-summary balance-card text-white h-100 p-4 border-0 rounded-4 shadow-sm position-relative overflow-hidden">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="text-white-50 fs-7 fw-medium d-block mb-1">ยอดเงินคงเหลือสุทธิ (Net Balance)</span>
+                            <h2 class="fw-extrabold m-0 display-6" id="totalBalanceDisplay">฿0.00</h2>
+                        </div>
+                        <div class="icon-box bg-white-10 rounded-3 p-2 text-white">
+                            <i class="bi bi-wallet-fill fs-4"></i>
+                        </div>
+                    </div>
+                    <small class="text-white-50 fs-8">คำนวณจาก รายรับทั้งหมด - รายจ่ายทั้งหมด (อัปเดตอัตโนมัติ)</small>
+                </div>
+            </div>
+
+            <!-- 2. Income Card -->
+            <div class="col-12 col-md-4">
+                <div class="card card-summary bg-white h-100 p-4 border rounded-4 shadow-xs">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="text-muted fs-7 fw-medium d-block mb-1">รายรับทั้งหมด (Total Income)</span>
+                            <h2 class="fw-bold text-success m-0" id="totalIncomeDisplay">฿0.00</h2>
+                        </div>
+                        <div class="icon-box bg-success-subtle text-success rounded-3 p-2">
+                            <i class="bi bi-graph-up-arrow fs-4"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted fs-8">ยอดเงินที่ได้รับเข้าสู่ระบบทั้งหมด</small>
+                </div>
+            </div>
+
+            <!-- 3. Expense Card -->
+            <div class="col-12 col-md-4">
+                <div class="card card-summary bg-white h-100 p-4 border rounded-4 shadow-xs">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <span class="text-muted fs-7 fw-medium d-block mb-1">รายจ่ายทั้งหมด (Total Expense)</span>
+                            <h2 class="fw-bold text-danger m-0" id="totalExpenseDisplay">฿0.00</h2>
+                        </div>
+                        <div class="icon-box bg-danger-subtle text-danger rounded-3 p-2">
+                            <i class="bi bi-graph-down-arrow fs-4"></i>
+                        </div>
+                    </div>
+                    <small class="text-muted fs-8">ยอดค่าใช้จ่ายที่ถูกบันทึกทั้งหมด</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Split -->
+        <div class="row g-4">
+            
+            <!-- Left Column: Transactions List -->
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-xs rounded-4 p-4 bg-white h-100">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark m-0">รายการบันทึกล่าสุด</h5>
+                            <small class="text-muted" id="txCountSubtitle">กำลังโหลดรายการ...</small>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-light border btn-sm rounded-3 px-3 fw-medium" onclick="exportToCSV()">
+                                <i class="bi bi-download me-1.5 text-secondary"></i>ส่งออก CSV
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-3 px-3 fw-medium" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                <i class="bi bi-folder-plus me-1.5"></i>+ หมวดหมู่
+                            </button>
+                            <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 fw-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                                <i class="bi bi-plus-lg me-1"></i>+ บันทึกรายการ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filter & Search Controls -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-12 col-sm-7">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="searchInput" class="form-control border-start-0" placeholder="ค้นหาชื่อรายการ หรือบันทึกย่อ..." oninput="renderTransactions()">
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-5">
+                            <select id="typeFilter" class="form-select form-select-sm" onchange="renderTransactions()">
+                                <option value="all">ทุกประเภท (รายรับ & รายจ่าย)</option>
+                                <option value="income">เฉพาะ รายรับ (+)</option>
+                                <option value="expense">เฉพาะ รายจ่าย (-)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Container -->
+                    <div class="transaction-list" id="transactionList" style="max-height: 520px; overflow-y: auto;">
+                        <!-- Injected via JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Charts & Categorized Summaries -->
+            <div class="col-12 col-lg-5">
+                
+                <!-- Income by Category Card -->
+                <div class="card border-0 shadow-xs rounded-4 p-4 bg-white mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark m-0"><i class="bi bi-pie-chart-fill text-success me-2"></i>รายรับตามหมวดหมู่</h6>
+                        <span class="badge bg-success-subtle text-success fs-8">รายรับ</span>
+                    </div>
+                    <div class="row align-items-center">
+                        <div class="col-6">
+                            <div class="chart-container position-relative" style="height: 160px;">
+                                <canvas id="incomeChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="category-breakdown-list fs-8" id="incomeCategoryList" style="max-height: 160px; overflow-y: auto;">
+                                <!-- Injected via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense by Category Card -->
+                <div class="card border-0 shadow-xs rounded-4 p-4 bg-white mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark m-0"><i class="bi bi-pie-chart-fill text-danger me-2"></i>รายจ่ายตามหมวดหมู่</h6>
+                        <span class="badge bg-danger-subtle text-danger fs-8">รายจ่าย</span>
+                    </div>
+                    <div class="row align-items-center">
+                        <div class="col-6">
+                            <div class="chart-container position-relative" style="height: 160px;">
+                                <canvas id="expenseChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="category-breakdown-list fs-8" id="expenseCategoryList" style="max-height: 160px; overflow-y: auto;">
+                                <!-- Injected via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Info Card -->
+                <div class="card border-0 shadow-xs rounded-4 p-3 bg-white">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary-subtle text-primary p-2.5 rounded-3">
+                            <i class="bi bi-code-slash fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold text-dark mb-0 fs-7">SmartPocket SS Full-Stack Project</h6>
+                            <p class="text-muted fs-8 mb-0">รองรับทั้ง PHP (XAMPP/MySQL) และ Python (Flask/SQLite)</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Transaction -->
+    <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-plus-circle-fill text-primary me-2"></i>บันทึกรายการใหม่
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addTransactionForm" onsubmit="handleSaveTransaction(event)">
+                    <div class="modal-body">
+                        <!-- Type Radio (Income vs Expense) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">ประเภทรายการ</label>
+                            <div class="d-flex gap-2">
+                                <input type="radio" class="btn-check" name="txType" id="txIncome" value="income" onchange="updateCategoryDropdown()">
+                                <label class="btn btn-outline-success flex-fill rounded-3 py-2 fw-semibold" for="txIncome">
+                                    <i class="bi bi-arrow-up-right me-1"></i>รายรับ (+)
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="txType" id="txExpense" value="expense" checked onchange="updateCategoryDropdown()">
+                                <label class="btn btn-outline-danger flex-fill rounded-3 py-2 fw-semibold" for="txExpense">
+                                    <i class="bi bi-arrow-down-left me-1"></i>รายจ่าย (-)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">ชื่อรายการ <span class="text-danger">*</span></label>
+                            <input type="text" id="txTitle" class="form-control rounded-3" placeholder="เช่น เงินเดือน, ค่าอาหารกลางวัน, ค่าเดินทาง" required>
+                        </div>
+
+                        <!-- Amount -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">จำนวนเงิน (บาท) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">฿</span>
+                                <input type="number" step="0.01" min="0.01" id="txAmount" class="form-control rounded-end-3" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">หมวดหมู่ <span class="text-danger">*</span></label>
+                            <select id="txCategory" class="form-select rounded-3" required>
+                                <!-- Injected dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">วันที่ทำรายการ</label>
+                            <input type="date" id="txDate" class="form-control rounded-3" required>
+                        </div>
+
+                        <!-- Note -->
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold fs-7">หมายเหตุเพิ่มเติม (ถ้ามี)</label>
+                            <textarea id="txNote" class="form-control rounded-3" rows="2" placeholder="ระบุรายละเอียดเพิ่มเติม..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-3 px-3" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">บันทึกข้อมูล</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Category -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-folder-plus text-primary me-2"></i>เพิ่มหมวดหมู่ใหม่
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addCategoryForm" onsubmit="handleSaveCategory(event)">
+                    <div class="modal-body">
+                        <!-- Category Type -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">ใช้สำหรับประเภท</label>
+                            <select id="catType" class="form-select rounded-3" required>
+                                <option value="income">รายรับ (Income)</option>
+                                <option value="expense" selected>รายจ่าย (Expense)</option>
+                            </select>
+                        </div>
+
+                        <!-- Category Name -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold fs-7">ชื่อหมวดหมู่ <span class="text-danger">*</span></label>
+                            <input type="text" id="catName" class="form-control rounded-3" placeholder="เช่น ค่ากาแฟ, ค่าประกัน, โบนัส" required>
+                        </div>
+
+                        <!-- Icon & Color -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label fw-semibold fs-7">ไอคอน</label>
+                                <select id="catIcon" class="form-select rounded-3">
+                                    <option value="bi-tag">🏷️ ป้ายกำกับ (Tag)</option>
+                                    <option value="bi-cup-hot">☕ กาแฟ/เครื่องดื่ม</option>
+                                    <option value="bi-car-front">🚗 ยานพาหนะ</option>
+                                    <option value="bi-house">🏠 บ้าน/ที่พัก</option>
+                                    <option value="bi-gift">🎁 ของขวัญ</option>
+                                    <option value="bi-book">📚 การศึกษา</option>
+                                    <option value="bi-heart-pulse">🏥 สุขภาพ</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-semibold fs-7">สีประจำหมวดหมู่</label>
+                                <input type="color" id="catColor" class="form-control form-control-color w-100 rounded-3" value="#0d6efd">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-3 px-3" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold">บันทึกหมวดหมู่</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Client-Side App Logic with LocalStorage for GitHub Pages Live Demo -->
+    <script>
+        // Default Seed Categories
+        const DEFAULT_CATEGORIES = [
+            { id: 1, name: 'เงินเดือน', type: 'income', icon: 'bi-briefcase', color: '#10B981' },
+            { id: 2, name: 'รายได้เสริม', type: 'income', icon: 'bi-cash-coin', color: '#06B6D4' },
+            { id: 3, name: 'โบนัส', type: 'income', icon: 'bi-gift', color: '#8B5CF6' },
+            { id: 4, name: 'ค่าอาหาร', type: 'expense', icon: 'bi-cup-hot', color: '#EF4444' },
+            { id: 5, name: 'ค่าเดินทาง', type: 'expense', icon: 'bi-car-front', color: '#F97316' },
+            { id: 6, name: 'ค่าที่พัก', type: 'expense', icon: 'bi-house-door', color: '#8B5CF6' },
+            { id: 7, name: 'ช้อปปิ้ง', type: 'expense', icon: 'bi-bag', color: '#EC4899' },
+            { id: 8, name: 'บันเทิง', type: 'expense', icon: 'bi-controller', color: '#3B82F6' },
+            { id: 9, name: 'ค่ารักษาพยาบาล', type: 'expense', icon: 'bi-heart-pulse', color: '#14B8A6' }
+        ];
+
+        // Default Seed Transactions
+        const DEFAULT_TRANSACTIONS = [
+            { id: 1, title: 'เงินเดือนประจำเดือน', amount: 35000, type: 'income', category_name: 'เงินเดือน', category_id: 1, date: '2026-10-01', note: 'เงินเดือนโอนเข้าบัญชีหลัก' },
+            { id: 2, title: 'รับงานฟรีแลนซ์ออกแบบ', amount: 6500, type: 'income', category_name: 'รายได้เสริม', category_id: 2, date: '2026-10-04', note: 'โปรเจกต์โลโก้ลูกค้า' },
+            { id: 3, title: 'ค่าอาหารและเครื่องดื่ม', amount: 1250, type: 'expense', category_name: 'ค่าอาหาร', category_id: 4, date: '2026-10-05', note: 'มื้อเย็นฉลองกับครอบครัว' },
+            { id: 4, title: 'เติมน้ำมันรถยนต์', amount: 950, type: 'expense', category_name: 'ค่าเดินทาง', category_id: 5, date: '2026-10-06', note: 'ปั๊ม ปตท.' },
+            { id: 5, title: 'ค่าอินเทอร์เน็ตและหอพัก', amount: 4800, type: 'expense', category_name: 'ค่าที่พัก', category_id: 6, date: '2026-10-07', note: 'ค่าห้องประจำเดือน ต.ค.' },
+            { id: 6, title: 'ซื้อหูฟังบลูทูธ', amount: 1290, type: 'expense', category_name: 'ช้อปปิ้ง', category_id: 7, date: '2026-10-08', note: 'ช้อปปิ้งลดราคา 10.10' }
+        ];
+
+        let categories = [];
+        let transactions = [];
+        let incomeChartInstance = null;
+        let expenseChartInstance = null;
+
+        // Initialize state
+        function initApp() {
+            // Set default date input to today
+            document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+
+            const storedCats = localStorage.getItem('smartpocket_categories');
+            const storedTxs = localStorage.getItem('smartpocket_transactions');
+
+            if (storedCats) {
+                categories = JSON.parse(storedCats);
+            } else {
+                categories = [...DEFAULT_CATEGORIES];
+                localStorage.setItem('smartpocket_categories', JSON.stringify(categories));
+            }
+
+            if (storedTxs) {
+                transactions = JSON.parse(storedTxs);
+            } else {
+                transactions = [...DEFAULT_TRANSACTIONS];
+                localStorage.setItem('smartpocket_transactions', JSON.stringify(transactions));
+            }
+
+            updateCategoryDropdown();
+            refreshDashboard();
+        }
+
+        // Reset to initial demo data
+        function resetDemoData() {
+            if (confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นข้อมูลตัวอย่างเริ่มต้นใช่หรือไม่?')) {
+                categories = [...DEFAULT_CATEGORIES];
+                transactions = [...DEFAULT_TRANSACTIONS];
+                localStorage.setItem('smartpocket_categories', JSON.stringify(categories));
+                localStorage.setItem('smartpocket_transactions', JSON.stringify(transactions));
+                updateCategoryDropdown();
+                refreshDashboard();
+                showAlert('success', 'รีเซ็ตข้อมูลตัวอย่างเรียบร้อยแล้ว');
+            }
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById('alertPlaceholder');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show rounded-3 shadow-xs mb-3" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            setTimeout(() => {
+                const el = container.querySelector('.alert');
+                if (el) el.remove();
+            }, 3500);
+        }
+
+        function updateCategoryDropdown() {
+            const selectedType = document.querySelector('input[name="txType"]:checked').value;
+            const selectEl = document.getElementById('txCategory');
+            selectEl.innerHTML = '';
+
+            const filteredCats = categories.filter(c => c.type === selectedType);
+            filteredCats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = c.name;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        function refreshDashboard() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+
+            transactions.forEach(t => {
+                const val = parseFloat(t.amount);
+                if (t.type === 'income') totalIncome += val;
+                else if (t.type === 'expense') totalExpense += val;
+            });
+
+            const balance = totalIncome - totalExpense;
+
+            document.getElementById('totalBalanceDisplay').textContent = `฿${balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('totalIncomeDisplay').textContent = `฿${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('totalExpenseDisplay').textContent = `฿${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('txCountSubtitle').textContent = `ทั้งหมด ${transactions.length} รายการ (จัดเก็บในเครื่องของคุณ)`;
+
+            renderTransactions();
+            renderCharts();
+        }
+
+        function renderTransactions() {
+            const listContainer = document.getElementById('transactionList');
+            const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+            const filterType = document.getElementById('typeFilter').value;
+
+            const filtered = transactions.filter(t => {
+                const matchesSearch = t.title.toLowerCase().includes(searchTerm) || (t.note && t.note.toLowerCase().includes(searchTerm)) || t.category_name.toLowerCase().includes(searchTerm);
+                const matchesType = filterType === 'all' || t.type === filterType;
+                return matchesSearch && matchesType;
+            });
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        <span>ไม่พบรายการที่ค้นหา คลิกปุ่ม <b>+ บันทึกรายการ</b> เพื่อเพิ่มรายการใหม่</span>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by date descending
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            listContainer.innerHTML = filtered.map(t => {
+                const isInc = t.type === 'income';
+                const sign = isInc ? '+฿' : '-฿';
+                const amountClass = isInc ? 'text-success' : 'text-danger';
+                const iconClass = isInc ? 'bi-arrow-up-right' : 'bi-arrow-down-left';
+                const iconBgClass = isInc ? 'trans-badge-inc' : 'trans-badge-exp';
+
+                return `
+                    <div class="transaction-item d-flex align-items-center justify-content-between p-3 mb-2 rounded-3 bg-light-subtle hover-shadow">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="trans-icon rounded-3 p-2.5 bg-white shadow-xs ${amountClass}">
+                                <i class="bi ${iconClass} fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark m-0">${escapeHtml(t.title)}</h6>
+                                <div class="d-flex align-items-center gap-2 mt-1 fs-8 text-muted">
+                                    <span><i class="bi bi-calendar3 me-1"></i>${formatDate(t.date)}</span>
+                                    <span>•</span>
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill">${escapeHtml(t.category_name)}</span>
+                                    ${t.note ? `<span>•</span><span class="text-truncate max-w-200" title="${escapeHtml(t.note)}">${escapeHtml(t.note)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-bold fs-6 ${amountClass}">
+                                ${sign}${parseFloat(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <button type="button" class="btn btn-link text-muted p-0 border-0 hover-danger" title="ลบรายการ" onclick="deleteTransaction(${t.id})">
+                                <i class="bi bi-trash fs-6 text-danger opacity-75"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCharts() {
+            // Aggregate by category
+            const incMap = {};
+            const expMap = {};
+
+            transactions.forEach(t => {
+                const amt = parseFloat(t.amount);
+                if (t.type === 'income') {
+                    incMap[t.category_name] = (incMap[t.category_name] || 0) + amt;
+                } else {
+                    expMap[t.category_name] = (expMap[t.category_name] || 0) + amt;
+                }
+            });
+
+            renderSingleChart('incomeChart', 'incomeCategoryList', incMap, ['#10B981', '#06B6D4', '#8B5CF6', '#3B82F6', '#F59E0B'], 'income');
+            renderSingleChart('expenseChart', 'expenseCategoryList', expMap, ['#EF4444', '#F97316', '#8B5CF6', '#EC4899', '#3B82F6', '#14B8A6'], 'expense');
+        }
+
+        function renderSingleChart(canvasId, listId, dataMap, defaultColors, type) {
+            const labels = Object.keys(dataMap);
+            const data = Object.values(dataMap);
+            const listEl = document.getElementById(listId);
+
+            if (labels.length === 0) {
+                listEl.innerHTML = `<span class="text-muted">ยังไม่มีข้อมูล${type === 'income' ? 'รายรับ' : 'รายจ่าย'}</span>`;
+                if (type === 'income' && incomeChartInstance) { incomeChartInstance.destroy(); incomeChartInstance = null; }
+                if (type === 'expense' && expenseChartInstance) { expenseChartInstance.destroy(); expenseChartInstance = null; }
+                return;
+            }
+
+            const total = data.reduce((a, b) => a + b, 0);
+
+            listEl.innerHTML = labels.map((label, idx) => {
+                const amt = data[idx];
+                const pct = total > 0 ? ((amt / total) * 100).toFixed(1) : 0;
+                const col = defaultColors[idx % defaultColors.length];
+                return `
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background-color: ${col};"></span>
+                            <span class="text-truncate" style="max-width: 90px;">${escapeHtml(label)}</span>
+                        </div>
+                        <span class="fw-semibold">${pct}%</span>
+                    </div>
+                `;
+            }).join('');
+
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const chartConfig = {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: labels.map((_, i) => defaultColors[i % defaultColors.length]),
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            };
+
+            if (type === 'income') {
+                if (incomeChartInstance) incomeChartInstance.destroy();
+                incomeChartInstance = new Chart(ctx, chartConfig);
+            } else {
+                if (expenseChartInstance) expenseChartInstance.destroy();
+                expenseChartInstance = new Chart(ctx, chartConfig);
+            }
+        }
+
+        function handleSaveTransaction(e) {
+            e.preventDefault();
+            const type = document.querySelector('input[name="txType"]:checked').value;
+            const title = document.getElementById('txTitle').value.trim();
+            const amount = parseFloat(document.getElementById('txAmount').value);
+            const category_name = document.getElementById('txCategory').value;
+            const date = document.getElementById('txDate').value;
+            const note = document.getElementById('txNote').value.trim();
+
+            if (!title || isNaN(amount) || amount <= 0 || !category_name || !date) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วนถูกต้อง');
+                return;
+            }
+
+            const newTx = {
+                id: Date.now(),
+                title,
+                amount,
+                type,
+                category_name,
+                date,
+                note
+            };
+
+            transactions.unshift(newTx);
+            localStorage.setItem('smartpocket_transactions', JSON.stringify(transactions));
+
+            bootstrap.Modal.getInstance(document.getElementById('addTransactionModal')).hide();
+            document.getElementById('addTransactionForm').reset();
+            document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+
+            refreshDashboard();
+            showAlert('success', 'บันทึกรายการสำเร็จแล้ว!');
+        }
+
+        function handleSaveCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById('catName').value.trim();
+            const type = document.getElementById('catType').value;
+            const icon = document.getElementById('catIcon').value;
+            const color = document.getElementById('catColor').value;
+
+            if (!name) {
+                alert('กรุณาระบุชื่อหมวดหมู่');
+                return;
+            }
+
+            const newCat = {
+                id: Date.now(),
+                name,
+                type,
+                icon,
+                color
+            };
+
+            categories.push(newCat);
+            localStorage.setItem('smartpocket_categories', JSON.stringify(categories));
+
+            bootstrap.Modal.getInstance(document.getElementById('addCategoryModal')).hide();
+            document.getElementById('addCategoryForm').reset();
+
+            updateCategoryDropdown();
+            showAlert('success', `เพิ่มหมวดหมู่ "${name}" สำเร็จแล้ว!`);
+        }
+
+        function deleteTransaction(id) {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                localStorage.setItem('smartpocket_transactions', JSON.stringify(transactions));
+                refreshDashboard();
+                showAlert('success', 'ลบรายการเรียบร้อยแล้ว');
+            }
+        }
+
+        function exportToCSV() {
+            if (transactions.length === 0) {
+                alert('ไม่มีรายการสำหรับส่งออก');
+                return;
+            }
+
+            let csvContent = '\uFEFFวันที่,ประเภท,ชื่อรายการ,หมวดหมู่,จำนวนเงิน,หมายเหตุ\n';
+            transactions.forEach(t => {
+                const row = [
+                    `"${t.date}"`,
+                    `"${t.type === 'income' ? 'รายรับ' : 'รายจ่าย'}"`,
+                    `"${t.title.replace(/"/g, '""')}"`,
+                    `"${t.category_name.replace(/"/g, '""')}"`,
+                    `"${t.amount}"`,
+                    `"${(t.note || '').replace(/"/g, '""')}"`
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SmartPocket_Transactions_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatDate(dStr) {
+            const d = new Date(dStr);
+            if (isNaN(d.getTime())) return dStr;
+            const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
