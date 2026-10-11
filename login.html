@@ -155,13 +155,22 @@
                 return;
             }
 
-            // Check registered users in localStorage
-            const storedUsers = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
-            const foundUser = storedUsers.find(u => (u.username.toLowerCase() === username.toLowerCase() || u.email.toLowerCase() === username.toLowerCase()));
+            // Built-in system accounts (ตรงกับเอกสารโครงการ)
+            const BUILTIN_ACCOUNTS = [
+                { username: 'Admin ICE', email: 'ice@admin.local',      password: 'admin123',  role: 'admin' },
+                { username: 'demo_user', email: 'demo@system.local',    password: 'user123',   role: 'user'  },
+                { username: 'icesyy',    email: 'ice12345@gmail.com',   password: 'user123',   role: 'user'  },
+            ];
 
-            if (foundUser) {
-                if (foundUser.password === password) {
-                    loginUser(foundUser.username, foundUser.role || 'user');
+            // Check built-in accounts first
+            const builtIn = BUILTIN_ACCOUNTS.find(a =>
+                a.username.toLowerCase() === username.toLowerCase() ||
+                a.email.toLowerCase() === username.toLowerCase()
+            );
+
+            if (builtIn) {
+                if (builtIn.password === password) {
+                    loginUser(builtIn.username, builtIn.role);
                     return;
                 } else {
                     showAlert('danger', '❌ รหัสผ่านไม่ถูกต้อง! กรุณาตรวจสอบอีกครั้ง');
@@ -169,16 +178,21 @@
                 }
             }
 
-            // Built-in accounts
-            if (username.toLowerCase() === 'admin' && password === 'admin123') {
-                loginUser('admin', 'admin');
-            } else if ((username.toLowerCase() === 'demo_user' || username.toLowerCase() === 'user') && password === 'password123') {
-                loginUser('demo_user', 'user');
-            } else if (username.length > 0 && password.length > 0) {
-                // Allow direct login for evaluator convenience
-                loginUser(username, 'user');
+            // Check registered users in localStorage (สมาชิกที่ลงทะเบียนเพิ่มเอง)
+            const storedUsers = JSON.parse(localStorage.getItem('smartpocket_users') || '[]');
+            const foundUser = storedUsers.find(u =>
+                u.username.toLowerCase() === username.toLowerCase() ||
+                u.email.toLowerCase() === username.toLowerCase()
+            );
+
+            if (foundUser) {
+                if (foundUser.password === password) {
+                    loginUser(foundUser.username, foundUser.role || 'user');
+                } else {
+                    showAlert('danger', '❌ รหัสผ่านไม่ถูกต้อง! กรุณาตรวจสอบอีกครั้ง');
+                }
             } else {
-                showAlert('danger', '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+                showAlert('danger', '❌ ไม่พบชื่อผู้ใช้หรืออีเมลนี้ในระบบ กรุณาตรวจสอบอีกครั้ง');
             }
         }
 
