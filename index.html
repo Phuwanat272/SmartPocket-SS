@@ -12,6 +12,12 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="assets/css/style.css">
+    <script>
+        // Auth Guard: ถ้ายังไม่ได้ login ให้ redirect ไปหน้า Login ก่อน
+        if (!localStorage.getItem('smartpocket_currentUser')) {
+            window.location.replace('login.html');
+        }
+    </script>
     <style>
         body {
             font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif;

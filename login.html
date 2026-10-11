@@ -10,6 +10,12 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
+    <script>
+        // ถ้าล็อกอินอยู่แล้วให้ redirect ไป index.html
+        if (localStorage.getItem('smartpocket_currentUser')) {
+            window.location.replace('index.html');
+        }
+    </script>
     <style>
         body.auth-body {
             font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif;
@@ -100,23 +106,7 @@
                 </div>
             </form>
 
-            <!-- Quick Demo Login for Teacher/Evaluator -->
-            <div class="demo-account-box mt-4">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <small class="fw-bold text-dark"><i class="bi bi-key-fill text-warning me-1"></i>เข้าสู่ระบบด่วนสำหรับอาจารย์/ผู้ตรวจ:</small>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-dark btn-demo flex-fill" onclick="quickLogin('admin', 'admin123', 'admin')">
-                        <i class="bi bi-shield-lock-fill text-danger me-1"></i>บัญชี Admin
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-demo flex-fill" onclick="quickLogin('demo_user', 'password123', 'user')">
-                        <i class="bi bi-person-fill me-1"></i>บัญชี User ทั่วไป
-                    </button>
-                </div>
-                <div class="text-center mt-2">
-                    <small class="text-muted" style="font-size: 0.72rem;">คลิกปุ่มเพื่อเข้าใช้งานทันทีโดยไม่ต้องพิมพ์</small>
-                </div>
-            </div>
+
 
             <!-- Project Credit Footer -->
             <div class="text-center mt-3 pt-2 border-top">
